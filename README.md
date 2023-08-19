@@ -17,3 +17,7 @@ Usage:
 `./ax25mqtt2pcap mymqttserver`
 
 ![image](https://github.com/M0LTE/Ax25Mqtt2pcap/assets/37816024/9da2f2b5-79d4-4e4e-b021-d5aa893fe8f9)
+
+## Licence
+
+MIT. Fill your boots.
