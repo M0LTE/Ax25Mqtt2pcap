@@ -16,6 +16,8 @@ Usage:
 
 `./ax25mqtt2pcap mymqttserver`
 
+Hard coded to subscribe to topics `kissproxy/+/+/+/unframed/+/DataFrameKissCmd` as output by [kissproxy](https://github.com/M0LTE/kissproxy) but of course, trivial to change.
+
 ![image](https://github.com/M0LTE/Ax25Mqtt2pcap/assets/37816024/9da2f2b5-79d4-4e4e-b021-d5aa893fe8f9)
 
 ## Licence
