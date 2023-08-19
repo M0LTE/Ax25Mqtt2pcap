@@ -54,12 +54,32 @@ ReadLine();
 
 static string? DecodeAx25(ArraySegment<byte> payload)
 {
-    if (!Frame.TryParse(payload, out var frame))
+    try
     {
+        if (!Frame.TryParse(payload, out var frame))
+        {
+            return null;
+        }
+
+        return frame.ToString();
+    }
+    catch (Exception ex)
+    {
+        var test = @$"
+[Fact]
+public void DecodeException_{Guid.NewGuid()}()
+{{
+    // {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
+    // {ex.GetType().Name}: {ex.Message}
+    Frame.TryParse(Convert.FromHexString(""{Convert.ToHexString(payload)}""), out var frame).Should().BeTrue();
+}}";
+
+        File.AppendAllText("GeneratedUnitTests.txt", test);
+
+        WriteLine("Error decoding a frame, generated a test");
+
         return null;
     }
-
-    return frame.ToString();
 }
 static class Extensions
 {
