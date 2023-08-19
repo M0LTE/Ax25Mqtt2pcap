@@ -4,6 +4,14 @@ Grab AX.25 frames from an MQTT topic and write them to a Wireshark-compatible pc
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y8KFHA0)
 
+Build:
+
+Install .NET 7 SDK, then:
+```
+cd Ax25Mqtt2pcap
+dotnet build
+```
+
 Usage:
 
 `./ax25mqtt2pcap mymqttserver`
