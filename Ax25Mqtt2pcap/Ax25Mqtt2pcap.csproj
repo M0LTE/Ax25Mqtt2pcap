@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.2.1.781" />
-    <PackageReference Include="NAx25" Version="1.0.5" />
+    <PackageReference Include="NAx25" Version="1.0.6" />
   </ItemGroup>
 
 </Project>
