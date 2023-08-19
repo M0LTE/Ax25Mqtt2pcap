@@ -2,6 +2,8 @@
 
 Grab AX.25 frames from an MQTT topic and write them to a Wireshark-compatible pcap file.
 
+For a serial-to-TCP proxy for serial KISS modems, including MQTT support, see [kissproxy](https://github.com/M0LTE/kissproxy).
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y8KFHA0)
 
 Build:
