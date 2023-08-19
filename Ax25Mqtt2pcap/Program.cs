@@ -1,6 +1,7 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
+using NAx25;
 using static System.Console;
 
 if (args.Length != 1)
@@ -31,19 +32,46 @@ mqttClient.ApplicationMessageReceivedAsync += arg =>
     var timestamp = DateTime.UtcNow - DateTime.UnixEpoch;
     var payload = arg.ApplicationMessage.PayloadSegment;
 
+    DecodeAx25(payload);
+
     lock (fileStream)
     {
         writer.WriteRecordHeader(timestamp, payload.Count);
         writer.Write(payload);
         writer.Flush();
     }
-    WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {payload.Count} bytes");
+    //WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {payload.Count} bytes");
     return Task.CompletedTask;
+};
+
+static string? GetProtocol(Protocol? protocolId) => protocolId switch
+{
+    null => null,
+    Protocol.NetRom => "NET/ROM",
+    Protocol.NoLayer3Protocol => "L2",
+    _ => protocolId.Value.ToString(),
 };
 
 WriteLine("Running, press enter to stop");
 ReadLine();
 
+static void DecodeAx25(ArraySegment<byte> payload)
+{
+    if (!Frame.TryParse(payload, out var frame))
+        return;
+
+    string frameInfo;
+    if (frame.FrameType == FrameType.Supervisory)
+    {
+        frameInfo = $"{frame.FrameType.ToString()[..1]}  {String.Join(",", frame.SourceAddresses)}>{frame.DestinationAddress}  {frame.SupervisoryFrameFields.SFrameType}";
+    }
+    else
+    {
+        frameInfo = $"{frame.FrameType.ToString()[..1]}  {String.Join(",", frame.SourceAddresses)}>{frame.DestinationAddress}  >{frame.ControlFields.SendSequenceNumber}/<{frame.ControlFields.ReceiveSequenceNumber}  {GetProtocol(frame.InformationFrameFields.ProtocolId)}  {frame.InformationFrameFields.InfoText}";
+    }
+
+    WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {frameInfo}");
+}
 static class Extensions
 {
     public static void WritePcapHeader(this BinaryWriter writer)
