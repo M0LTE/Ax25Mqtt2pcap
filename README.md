@@ -4,6 +4,8 @@ Grab AX.25 frames from an MQTT topic and write them to a Wireshark-compatible pc
 
 For a serial-to-TCP proxy for serial KISS modems, including MQTT support, see [kissproxy](https://github.com/M0LTE/kissproxy).
 
+Note: ACKMODE frames not supported yet, see https://github.com/M0LTE/Ax25Mqtt2pcap/issues/1
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y8KFHA0)
 
 Build:
