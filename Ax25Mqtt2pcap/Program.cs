@@ -2,7 +2,12 @@
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using NAx25;
+using System.Diagnostics;
+using System.Text;
+using System.Text.Json.Nodes;
 using static System.Console;
+
+ResetColor();
 
 if (args.Length != 1)
 {
@@ -15,6 +20,7 @@ mqttClient.ConnectedAsync += _ => { WriteLine("Connected to broker"); return Tas
 mqttClient.ConnectingFailedAsync += _ => { WriteLine("Connecting to broker failed"); return Task.CompletedTask; };
 mqttClient.DisconnectedAsync += _ => { WriteLine("Disconnected from broker"); return Task.CompletedTask; };
 await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/DataFrameKissCmd");
+//await mqttClient.SubscribeAsync("kissproxy/+/+/+/debug");
 await mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
     .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
     .WithClientOptions(new MqttClientOptionsBuilder()
@@ -27,24 +33,107 @@ using var fileStream = File.Open($"ax25-capture-{DateTime.UtcNow:yyyyMMdd-HHmmss
 using var writer = new BinaryWriter(fileStream);
 writer.WritePcapHeader();
 
+int cur = 0;
+Stopwatch sw = Stopwatch.StartNew();
+Dictionary<string, int> lastSeqs = new Dictionary<string, int>();
 mqttClient.ApplicationMessageReceivedAsync += arg =>
 {
-    var timestamp = DateTime.UtcNow - DateTime.UnixEpoch;
-    var payload = arg.ApplicationMessage.PayloadSegment;
-
-    lock (fileStream)
+    if (arg.ApplicationMessage.Topic.Contains("DataFrameKissCmd"))
     {
-        writer.WriteRecordHeader(timestamp, payload.Count);
-        writer.Write(payload);
-        writer.Flush();
-    }
+        var timestamp = DateTime.UtcNow - DateTime.UnixEpoch;
+        var payload = arg.ApplicationMessage.PayloadSegment;
 
-    var decodeOutput = DecodeAx25(payload);
-    if (!string.IsNullOrWhiteSpace(decodeOutput))
+        lock (fileStream)
+        {
+            writer.WriteRecordHeader(timestamp, payload.Count);
+            writer.Write(payload);
+            writer.Flush();
+        }
+
+        var decodeOutput = DecodeAx25(payload);
+        if (!string.IsNullOrWhiteSpace(decodeOutput))
+        {
+            WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {decodeOutput}");
+        }
+    }
+    else if (false && arg.ApplicationMessage.Topic.Contains("debug"))
     {
-        WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {decodeOutput}");
-    }
+        var obj = JsonNode.Parse(arg.ApplicationMessage.ConvertPayloadToString());
+        int seq = (int)obj!["seq"]!;
+        string hex = (string)obj!["val"]!;
 
+        if (hex.Length == 1)
+        {
+            hex = "0" + hex;
+        }
+        byte val = Convert.FromHexString(hex).Single();
+
+        if (!lastSeqs.TryGetValue(arg.ApplicationMessage.Topic, out var topicLastSeq))
+        {
+            lastSeqs[arg.ApplicationMessage.Topic] = seq;
+        }
+
+        if (topicLastSeq != 0)
+        {
+            if (seq < topicLastSeq + 1)
+            {
+                // gone backwards
+                BackgroundColor = ConsoleColor.Red;
+            }
+            else if (seq > topicLastSeq + 1)
+            {
+                // missed some
+                BackgroundColor = ConsoleColor.Yellow;
+            }
+            else
+            {
+                lastSeqs[arg.ApplicationMessage.Topic] = seq;
+                ResetColor();
+            }
+        }
+
+        if (arg.ApplicationMessage.Topic == "kissproxy/gb7rdg-node/platform-3f980000.usb-usb-0:1.3:1.0/toModem/debug")
+        {
+            if (sw.ElapsedMilliseconds > 100)
+            {
+                cur = 0;
+                WriteLine();
+                WriteLine();
+            }
+            sw.Restart();
+
+            cur++;
+            if (hex == "c0")
+            {
+                ForegroundColor = ConsoleColor.Green;
+            }
+            Write(hex);
+            ResetColor();
+            Write(" ");
+            if (cur == 8)
+            {
+                Write(" ");
+            }
+            var (left, top) = GetCursorPosition();
+            bool isSecondByte = cur > 8;
+            SetCursorPosition(50 + cur + (isSecondByte ? 2 : 0), top);
+            if (val >= 33 && val <= 126)
+            {
+                Write(Encoding.ASCII.GetString(new[] { val }));
+            }
+            else
+            {
+                Write(".");
+            }
+            SetCursorPosition(left, top);
+
+            if (cur == 16)
+            {
+                cur = 0;
+                WriteLine();
+            }
+        }
+    }
     return Task.CompletedTask;
 };
 
