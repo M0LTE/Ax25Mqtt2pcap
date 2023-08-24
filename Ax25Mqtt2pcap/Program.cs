@@ -20,6 +20,7 @@ mqttClient.ConnectedAsync += _ => { WriteLine("Connected to broker"); return Tas
 mqttClient.ConnectingFailedAsync += _ => { WriteLine("Connecting to broker failed"); return Task.CompletedTask; };
 mqttClient.DisconnectedAsync += _ => { WriteLine("Disconnected from broker"); return Task.CompletedTask; };
 await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/DataFrameKissCmd");
+//await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/AckModeKissCmd");
 //await mqttClient.SubscribeAsync("kissproxy/+/+/+/debug");
 await mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
     .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
@@ -38,7 +39,7 @@ Stopwatch sw = Stopwatch.StartNew();
 Dictionary<string, int> lastSeqs = new Dictionary<string, int>();
 mqttClient.ApplicationMessageReceivedAsync += arg =>
 {
-    if (arg.ApplicationMessage.Topic.Contains("DataFrameKissCmd"))
+    if (arg.ApplicationMessage.Topic.Contains("DataFrameKissCmd") || arg.ApplicationMessage.Topic.Contains("AckModeKissCmd"))
     {
         var timestamp = DateTime.UtcNow - DateTime.UnixEpoch;
         var payload = arg.ApplicationMessage.PayloadSegment;
@@ -51,10 +52,7 @@ mqttClient.ApplicationMessageReceivedAsync += arg =>
         }
 
         var decodeOutput = DecodeAx25(payload);
-        if (!string.IsNullOrWhiteSpace(decodeOutput))
-        {
-            WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {decodeOutput}");
-        }
+        WriteLine($"{DateTime.UtcNow:HH:mm:ss}Z  {(String.IsNullOrWhiteSpace(decodeOutput) ? "unsupported" : decodeOutput)}");
     }
     else if (false && arg.ApplicationMessage.Topic.Contains("debug"))
     {
