@@ -9,9 +9,9 @@ using static System.Console;
 
 ResetColor();
 
-if (args.Length != 1)
+if (args.Length == 0)
 {
-    WriteLine("Specify MQTT server name as the sole command line parameter");
+    WriteLine("Specify an MQTT server host, or optionally using authentication: Ax25Mqtt2pcap $host $user $password");
     return;
 }
 
@@ -22,12 +22,21 @@ mqttClient.DisconnectedAsync += _ => { WriteLine("Disconnected from broker"); re
 await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/DataFrameKissCmd");
 //await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/AckModeKissCmd");
 //await mqttClient.SubscribeAsync("kissproxy/+/+/+/debug");
+
+var client_options = new MqttClientOptionsBuilder()
+        .WithClientId(Guid.NewGuid().ToString())
+        .WithTcpServer(args[0]);
+
+if (args.Length == 3)
+{
+ client_options.WithCredentials(args[1], args[2]);
+}
+
+client_options.Build();
+
 await mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
     .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
-    .WithClientOptions(new MqttClientOptionsBuilder()
-        .WithClientId(Guid.NewGuid().ToString())
-        .WithTcpServer(args[0])
-        .Build())
+    .WithClientOptions(client_options)
     .Build());
 
 using var fileStream = File.Open($"ax25-capture-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pcap", FileMode.Create, FileAccess.Write, FileShare.Read);
