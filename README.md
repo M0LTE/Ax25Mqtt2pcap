@@ -20,6 +20,10 @@ Usage:
 
 `./ax25mqtt2pcap mymqttserver`
 
+or with authentication:
+
+`./ax25mqtt2pcap mymqttserver myuser mypass`
+
 or if you can't be bothered compiling it first:
 
 ```
