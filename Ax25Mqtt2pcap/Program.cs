@@ -23,20 +23,18 @@ await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/DataFrameKissCmd");
 //await mqttClient.SubscribeAsync("kissproxy/+/+/+/unframed/+/AckModeKissCmd");
 //await mqttClient.SubscribeAsync("kissproxy/+/+/+/debug");
 
-var client_options = new MqttClientOptionsBuilder()
+var clientOptionsBuilder = new MqttClientOptionsBuilder()
         .WithClientId(Guid.NewGuid().ToString())
         .WithTcpServer(args[0]);
 
 if (args.Length == 3)
 {
- client_options.WithCredentials(args[1], args[2]);
+    clientOptionsBuilder = clientOptionsBuilder.WithCredentials(args[1], args[2]);
 }
-
-client_options.Build();
 
 await mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
     .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
-    .WithClientOptions(client_options)
+    .WithClientOptions(clientOptionsBuilder.Build())
     .Build());
 
 using var fileStream = File.Open($"ax25-capture-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pcap", FileMode.Create, FileAccess.Write, FileShare.Read);
