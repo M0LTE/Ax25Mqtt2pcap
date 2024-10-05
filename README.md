@@ -10,7 +10,7 @@ Note: ACKMODE frames not supported yet, see https://github.com/M0LTE/Ax25Mqtt2pc
 
 Build:
 
-Install .NET 7 SDK, then:
+Install .NET 8 SDK, then:
 ```
 cd Ax25Mqtt2pcap
 dotnet build
